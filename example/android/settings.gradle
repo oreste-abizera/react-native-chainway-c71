@@ -1,0 +1,6 @@
+rootProject.name = 'ChainwayC71Example'
+apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesSettingsGradle(settings)
+include ':app'
+
+include ':reactnativechainwayc71'
+project(':reactnativechainwayc71').projectDir = new File(rootProject.projectDir, '../../android')
