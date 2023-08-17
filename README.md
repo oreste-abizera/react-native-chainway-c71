@@ -12,10 +12,50 @@ npm install react-native-chainway-c71
 
 ```js
 import ChainwayC71 from "react-native-chainway-c71";
-
 // ...
 
-const result = await ChainwayC71.multiply(3, 7);
+const BarcodeScannerScreen: React.FC = () => {
+  const [idNumber, setIdNumber] = useState(")
+  useEffect(() => {
+    const handleBarcodeScan = (data: any) => {
+      setIdNumber(data.replace(/[^a-zA-Z0-9]/g, '').substring(0, 16));
+    };
+    ChainwayC72Component.initReader();
+
+    // Add a listener for barcode scanning
+    ChainwayC72Component.addBarcodeListener(handleBarcodeScan);
+
+    // Clean up the listener when the component unmounts
+    return () => {
+      ChainwayC72Component.removeBarcodeListener(handleBarcodeScan);
+      ChainwayC72Component.deinitReader();
+    };
+  }, []);
+
+  const startBarcodeScan = async () => {
+    try {
+      if (await ChainwayC72Component.startBarcodeScan()) {
+        console.log('Barcode scanning started');
+      } else {
+        throw new Error('');
+      }
+    } catch (error) {
+      console.error('Error starting barcode scanning:', error);
+    }
+  };
+
+  return (
+    <View>
+      <Text style={{marginVertical: 20}}>
+        Barcode Scanner{idNumber && `: ${idNumber}`}
+      </Text>
+      <Button title="Start Scan" onPress={startBarcodeScan} />
+    </View>
+  );
+};
+
+export default BarcodeScannerScreen;
+
 ```
 
 ## Contributing
