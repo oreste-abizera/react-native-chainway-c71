@@ -1,11 +1,6 @@
 package com.reactnativechainwayc71;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import android.content.BroadcastReceiver;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.Context;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -13,17 +8,17 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.bridge.LifecycleEventListener;
-import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import com.barcode.BarcodeUtility;
+import com.rscja.barcode.BarcodeDecoder;
+import com.rscja.barcode.BarcodeFactory;
+import com.rscja.deviceapi.entity.BarcodeEntity;
 
 @ReactModule(name = ChainwayC71Module.NAME)
 public class ChainwayC71Module extends ReactContextBaseJavaModule implements LifecycleEventListener {
     public static final String NAME = "ChainwayC71";
     private final ReactApplicationContext reactContext;
-    private static BarcodeUtility barcodeUtility = null;
-    private static BarcodeDataReceiver barcodeDataReceiver = null;
+    private static BarcodeDecoder barcodeDecoder = BarcodeFactory.getInstance().getBarcodeDecoder();
 
     public ChainwayC71Module(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -52,39 +47,22 @@ public class ChainwayC71Module extends ReactContextBaseJavaModule implements Lif
 
     private void connect() {
             // Barcode
-            if (barcodeUtility == null) {
-                barcodeUtility = BarcodeUtility.getInstance();
-            }
+            barcodeDecoder.open(this.reactContext);
 
-            barcodeUtility.setOutputMode(this.reactContext, 2);// Broadcast receive data
-            barcodeUtility.setScanResultBroadcast(this.reactContext, "com.scanner.broadcast", "data"); // Set Broadcast
-            barcodeUtility.open(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
-            barcodeUtility.setReleaseScan(this.reactContext, true);
-            barcodeUtility.setScanFailureBroadcast(this.reactContext, false);
-            barcodeUtility.enableContinuousScan(this.reactContext, true);
-            barcodeUtility.enablePlayFailureSound(this.reactContext, true);
-            barcodeUtility.enablePlaySuccessSound(this.reactContext, true);
-            barcodeUtility.enableEnter(this.reactContext, false);
-            barcodeUtility.setBarcodeEncodingFormat(this.reactContext, 1);
-
-            if (barcodeDataReceiver == null) {
-                barcodeDataReceiver = new BarcodeDataReceiver();
-                IntentFilter intentFilter = new IntentFilter();
-                intentFilter.addAction("com.scanner.broadcast");
-                this.reactContext.registerReceiver(barcodeDataReceiver, intentFilter);
-            }
+            barcodeDecoder.setDecodeCallback(new BarcodeDecoder.DecodeCallback() {
+              @Override
+              public void onDecodeComplete(BarcodeEntity barcodeEntity) {
+                if(barcodeEntity.getResultCode() == BarcodeDecoder.DECODE_SUCCESS) {
+                  sendEvent("BARCODE", barcodeEntity.getBarcodeData());
+                } else {
+                  sendEvent("BARCODE", "fail");
+                }
+              }
+            });
     }
 
     private void disconnect() {
-        if (barcodeUtility != null) {
-            barcodeUtility.close(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
-            barcodeUtility = null;
-        }
-
-        if (barcodeDataReceiver != null) {
-            this.reactContext.unregisterReceiver(barcodeDataReceiver);
-            barcodeDataReceiver = null;
-        }
+        barcodeDecoder.stopScan();
     }
 
     @ReactMethod
@@ -108,65 +86,27 @@ public class ChainwayC71Module extends ReactContextBaseJavaModule implements Lif
     }
 
     @ReactMethod
-    public void barcodeRead(Promise promise) {
+    public void isReaderInit(Promise promise){
+      try {
+        promise.resolve(barcodeDecoder.isOpen());
+      } catch (Exception err){
+        promise.reject("CHECK_INIT_READER_ERROR",err.getLocalizedMessage());
+      }
+    }
 
-        try {
-            if (barcodeUtility != null) {
-                barcodeUtility.startScan(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
-                promise.resolve(true);
-            }
-            promise.resolve(false);
-        } catch (Exception err) {
-            promise.reject("BARCODE_READ_ERROR",err.getLocalizedMessage());
-        }
+    @ReactMethod
+    public void barcodeRead(Promise promise) {
+      barcodeDecoder.startScan();
     }
 
     @ReactMethod
     public void barcodeCancel(Promise promise) {
-        try {
-            if (barcodeUtility != null) {
-                barcodeUtility.stopScan(this.reactContext, BarcodeUtility.ModuleType.BARCODE_2D);
-                promise.resolve(true);
-            }
-            promise.resolve(false);
-        } catch (Exception err) {
-            promise.reject("BARCODE_CANCEL_ERROR",err.getLocalizedMessage());
-        }
-    }
-
-    private void sendEvent(String eventName, @Nullable WritableMap map) {
-        getReactApplicationContext()
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, map);
+        barcodeDecoder.stopScan();
     }
 
     private void sendEvent(String eventName, String msg) {
         getReactApplicationContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, msg);
-    }
-
-    private void sendEvent(String eventName, Boolean msg) {
-        getReactApplicationContext()
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, msg);
-    }
-
-    class BarcodeDataReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String barCode = intent.getStringExtra("data");
-            String status = intent.getStringExtra("SCAN_STATE");
-
-            if (status != null && (status.equals("cancel") || status.equals("failure"))) {
-                sendEvent("BARCODE", false);
-            } else {
-                if (barCode.length() == 0) {
-                    sendEvent("BARCODE", false);
-                } else {
-                    sendEvent("BARCODE", barCode);
-                }
-            }
-        }
     }
 }

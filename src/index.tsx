@@ -16,9 +16,13 @@ type startScan = () => Promise<any>;
 
 type stopScan = () => Promise<any>;
 
+type isReaderInit = () => Promise<any>;
+
 const initReader: initReader = () => ChainwayC71.initReader();
 
 const deinitReader: deinitReader = () => ChainwayC71.deinitReader();
+
+const isReaderInit: isReaderInit = () => ChainwayC71.isReaderInit();
 
 const startBarcodeScan: startScan = () => ChainwayC71.barcodeRead();
 
@@ -34,6 +38,7 @@ const removeBarcodeListener: removeListener = (_listener) =>
 export default {
   initReader,
   deinitReader,
+  isReaderInit,
   addBarcodeListener,
   removeBarcodeListener,
   startBarcodeScan,
