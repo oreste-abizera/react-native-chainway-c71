@@ -15,7 +15,7 @@ import ChainwayC71 from "react-native-chainway-c71";
 // ...
 
 const BarcodeScannerScreen: React.FC = () => {
-  const [idNumber, setIdNumber] = useState(")
+  const [idNumber, setIdNumber] = useState("")
   useEffect(() => {
     const handleBarcodeScan = (data: any) => {
       setIdNumber(data.replace(/[^a-zA-Z0-9]/g, '').substring(0, 16));
