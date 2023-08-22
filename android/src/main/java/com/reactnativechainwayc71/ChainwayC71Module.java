@@ -104,6 +104,15 @@ public class ChainwayC71Module extends ReactContextBaseJavaModule implements Lif
         barcodeDecoder.stopScan();
     }
 
+    @ReactMethod
+    public void addListener(String eventName) {
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+
+    }
+
     private void sendEvent(String eventName, String msg) {
         getReactApplicationContext()
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
