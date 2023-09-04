@@ -1,6 +1,6 @@
 {
   "name": "react-native-chainway-c71",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "React native wrapper for the chainway sdk",
   "main": "lib/commonjs/index",
   "module": "lib/module/index",
